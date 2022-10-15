@@ -8,6 +8,8 @@ basePath: /api/db
 tags:
   - name: assets
     description: Assets APIs
+  - name: snapshots
+    description: Snapshots APIs
 schemes:
   - http
   - https
@@ -229,6 +231,32 @@ paths:
         - assets
       summary: Asset 全削除
       description: Asset 全削除
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /read_snapshots:
+    get:
+      tags:
+        - snapshots
+      summary: Snapshot 全取得
+      description: Snapshot 全取得
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /remove_snapshots:
+    delete:
+      tags:
+        - snapshots
+      summary: Snapshot 全削除
+      description: Snapshot 全削除
       produces:
         - application/json
       responses:

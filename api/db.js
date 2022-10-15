@@ -67,13 +67,15 @@ api.createAsset = async function( asset ){
           var t = ( new Date() ).getTime();
           asset.created = t;
           asset.updated = t;
-          //console.log( quiz );
           var query = { text: sql, values: [ asset.id, asset.name, asset.name_a, asset.name_b, asset.created, asset.updated ] };
-          conn.query( query, function( err, result ){
+          conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'createAsset' );
+
               resolve( { status: true, result: result } );
             }
           });
@@ -181,11 +183,14 @@ api.plusAsset = async function( asset ){
           var t = ( new Date() ).getTime();
           asset.updated = t;
           var query = { text: sql, values: [ asset.num_a, asset.num_b, asset.updated, asset.id ] };
-          conn.query( query, function( err, result ){
+          conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'plusAsset' );
+
               resolve( { status: true, result: result } );
             }
           });
@@ -217,11 +222,14 @@ api.minusAsset = async function( asset ){
           var t = ( new Date() ).getTime();
           asset.updated = t;
           var query = { text: sql, values: [ asset.num_a, asset.num_b, asset.updated, asset.id ] };
-          conn.query( query, function( err, result ){
+          conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'minusAsset' );
+
               resolve( { status: true, result: result } );
             }
           });
@@ -252,11 +260,14 @@ api.consumeAssetPercent = async function( asset_id, percent ){
           var sql = 'update assets set num_a = num_a * $1 / 100, num_b = num_b * $2 / 100, updated = $3 where id = $4';
           var t = ( new Date() ).getTime();
           var query = { text: sql, values: [ percent, percent, t, asset_id ] };
-          conn.query( query, function( err, result ){
+          conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'consumeAssetPercent' );
+
               resolve( { status: true, result: result } );
             }
           });
@@ -298,11 +309,14 @@ api.consumeAssetAmount = async function( asset_id, amount ){
             var sql = 'update assets set num_a = num_a - $1, num_b = num_b - $2, updated = $3 where id = $4';
             var t = ( new Date() ).getTime();
             var query = { text: sql, values: [ amount_a, amount_b, t, asset_id ] };
-            conn.query( query, function( err, result ){
+            conn.query( query, async function( err, result ){
               if( err ){
                 console.log( err );
                 resolve( { status: false, error: err } );
               }else{
+                //. #1
+                var snapshot = await api.createSnapshot( 'consumeAssetAmount' );
+
                 resolve( { status: true, asset: result } );
               }
             });
@@ -348,6 +362,9 @@ api.transportAsset = async function( asset_id_from, asset_id_to, amount ){
             if( r1 && r1.status ){
               var r2 = await api.plusAsset( { id: asset_id_to, num_a: amount_a, num_b: amount_b } );
               if( r2 && r2.status ){
+                //. #1
+                var snapshot = await api.createSnapshot( 'transportAsset' );
+
                 resolve( { status: true, asset_from: r1, asset_to: r2 } );
               }else{
                 resolve( r2 );
@@ -385,11 +402,14 @@ api.resetAsset = async function( asset_id ){
           var sql = 'update assets set num_a = 0, num_b = 0, updated = $1 where id = $2';
           var t = ( new Date() ).getTime();
           var query = { text: sql, values: [ t, asset_id ] };
-          conn.query( query, function( err, result ){
+          conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'resetAsset' );
+
               resolve( { status: true, result: result } );
             }
           });
@@ -420,11 +440,14 @@ api.resetAssets = async function(){
           var sql = 'update assets set num_a = 0, num_b = 0, updated = $1';
           var t = ( new Date() ).getTime();
           var query = { text: sql, values: [ t ] };
-          conn.query( query, function( err, result ){
+          conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'resetAssets' );
+
               resolve( { status: true, result: result } );
             }
           });
@@ -454,11 +477,14 @@ api.removeAsset = async function( asset_id ){
         try{
           var sql = 'delete from assets where id = $1';
           var query = { text: sql, values: [ asset_id ] };
-          conn.query( query, function( err, result ){
+          conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'removeAsset' );
+
               resolve( { status: true, result: result } );
             }
           });
@@ -488,6 +514,130 @@ api.removeAssets = async function(){
         try{
           var sql = 'delete from assets';
           var query = { text: sql, values: [] };
+          conn.query( query, async function( err, result ){
+            if( err ){
+              console.log( err );
+              resolve( { status: false, error: err } );
+            }else{
+              //. #1
+              var snapshot = await api.createSnapshot( 'removeAssets' );
+
+              resolve( { status: true, result: result } );
+            }
+          });
+        }catch( e ){
+          console.log( e );
+          resolve( { status: false, error: err } );
+        }finally{
+          if( conn ){
+            conn.release();
+          }
+        }
+      }else{
+        resolve( { status: false, error: 'no connection.' } );
+      }
+    }else{
+      resolve( { status: false, error: 'db not ready.' } );
+    }
+  });
+};
+
+
+//. Create
+api.createSnapshot = async function( memo = '' ){
+  return new Promise( async ( resolve, reject ) => {
+    if( pg ){
+      var conn = await pg.connect();
+      if( conn ){
+        try{
+          var r = await api.readAssets();
+          if( r && r.status ){
+            if( r.assets.length == 0 ){
+              resolve( { status: true, count: 0 } );
+            }else{
+              var key = uuidv4();
+              var count = 0;
+              for( var i = 0; i < r.assets.length; i ++ ){
+                var sql = 'insert into snapshots( id, key, asset_id, num_a, num_b, memo, created, updated ) values ( $1, $2, $3, $4, $5, $6, $7, $8 )';
+                var id = uuidv4();
+                var t = ( new Date() ).getTime();
+                var query = { text: sql, values: [ id, key, r.assets[i].id, r.assets[i].num_a, r.assets[i].num_b, memo, t, t ] };
+                conn.query( query, function( err, result ){
+                  if( err ){ console.log( err ); }
+                  count ++;
+                  if( count == r.assets.length ){
+                    resolve( { status: true, count: count } );
+                  }
+                });
+              }
+            }
+          }else{
+            resolve( r );
+          }
+        }catch( e ){
+          console.log( e );
+          resolve( { status: false, error: err } );
+        }finally{
+          if( conn ){
+            conn.release();
+          }
+        }
+      }else{
+        resolve( { status: false, error: 'no connection.' } );
+      }
+    }else{
+      resolve( { status: false, error: 'db not ready.' } );
+    }
+  });
+};
+
+//. Reads
+api.readSnapshots = async function(){
+  return new Promise( async ( resolve, reject ) => {
+    if( pg ){
+      var conn = await pg.connect();
+      if( conn ){
+        try{
+          var sql = 'select * from snapshots order by created desc';
+          var query = { text: sql, values: [] };
+          conn.query( query, function( err, result ){
+            if( err ){
+              console.log( err );
+              resolve( { status: false, error: err } );
+            }else{
+              if( result && result.rows ){
+                resolve( { status: true, snapshots: result.rows } );
+              }else{
+                resolve( { status: false, error: 'no data' } );
+              }
+            }
+          });
+        }catch( e ){
+          console.log( e );
+          resolve( { status: false, error: err } );
+        }finally{
+          if( conn ){
+            conn.release();
+          }
+        }
+      }else{
+        resolve( { status: false, error: 'no connection.' } );
+      }
+    }else{
+      resolve( { status: false, error: 'db not ready.' } );
+    }
+  });
+};
+
+//. Removes
+api.removeSnapshots = async function(){
+  return new Promise( async ( resolve, reject ) => {
+    if( pg ){
+      var conn = await pg.connect();
+      if( conn ){
+        try{
+          var sql = 'delete from snapshots';
+          var query = { text: sql, values: [] };
           conn.query( query, function( err, result ){
             if( err ){
               console.log( err );
@@ -512,6 +662,7 @@ api.removeAssets = async function(){
     }
   });
 };
+
 
 
 
@@ -654,6 +805,28 @@ api.delete( '/remove_assets', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
   api.removeAssets().then( function( result ){
+    res.status( result.status ? 200 : 400 );
+    res.write( JSON.stringify( result, null, 2 ) );
+    res.end();
+  });
+});
+
+//. Reads
+api.get( '/read_snapshots', async function( req, res ){
+  res.contentType( 'application/json; charset=utf-8' );
+
+  api.readSnapshots().then( function( result ){
+    res.status( result.status ? 200 : 400 );
+    res.write( JSON.stringify( result, null, 2 ) );
+    res.end();
+  });
+});
+
+//. Removes
+api.delete( '/remove_snapshots', async function( req, res ){
+  res.contentType( 'application/json; charset=utf-8' );
+
+  api.removeSnapshots().then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
