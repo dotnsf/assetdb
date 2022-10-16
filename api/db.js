@@ -54,27 +54,25 @@ api.use( bodyParser.json( { limit: '50mb' }) );
 api.use( express.Router() );
 
 //. Create
-api.createAsset = async function( asset ){
+api.createFacility = async function( facility ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'insert into assets( id, name, name_a, name_b, created, updated ) values ( $1, $2, $3, $4, $5, $6 )';
-          if( !asset.id ){
-            asset.id = uuidv4();
+          var sql = 'insert into facilities( id, name, asset_a_name, asset_b_name, created, updated ) values ( $1, $2, $3, $4, $5, $6 )';
+          if( !facility.id ){
+            facility.id = uuidv4();
           }
           var t = ( new Date() ).getTime();
-          asset.created = t;
-          asset.updated = t;
-          var query = { text: sql, values: [ asset.id, asset.name, asset.name_a, asset.name_b, asset.created, asset.updated ] };
+          var query = { text: sql, values: [ facility.id, facility.name, facility.asset_a_name, facility.asset_a_name, t, t ] };
           conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
               //. #1
-              var snapshot = await api.createSnapshot( 'createAsset' );
+              var snapshot = await api.createSnapshot( 'createFacility' );
 
               resolve( { status: true, result: result } );
             }
@@ -97,21 +95,21 @@ api.createAsset = async function( asset ){
 };
 
 //. Read
-api.readAsset = async function( asset_id ){
+api.readFacility = async function( facility_id ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'select * from assets where id = $1';
-          var query = { text: sql, values: [ asset_id ] };
+          var sql = 'select * from facilities where id = $1';
+          var query = { text: sql, values: [ facility_id ] };
           conn.query( query, function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
               if( result && result.rows && result.rows.length > 0 ){
-                resolve( { status: true, asset: result.rows[0] } );
+                resolve( { status: true, facility: result.rows[0] } );
               }else{
                 resolve( { status: false, error: 'no data' } );
               }
@@ -135,13 +133,13 @@ api.readAsset = async function( asset_id ){
 };
 
 //. Reads
-api.readAssets = async function(){
+api.readFacilities = async function(){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'select * from assets order by created desc';
+          var sql = 'select * from facilities order by created desc';
           var query = { text: sql, values: [] };
           conn.query( query, function( err, result ){
             if( err ){
@@ -149,7 +147,7 @@ api.readAssets = async function(){
               resolve( { status: false, error: err } );
             }else{
               if( result && result.rows ){
-                resolve( { status: true, assets: result.rows } );
+                resolve( { status: true, facilities: result.rows } );
               }else{
                 resolve( { status: false, error: 'no data' } );
               }
@@ -173,16 +171,15 @@ api.readAssets = async function(){
 };
 
 //. Plus
-api.plusAsset = async function( asset ){
+api.plusAsset = async function( facility ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update assets set num_a = num_a + $1, num_b = num_b + $2, updated = $3 where id = $4';
+          var sql = 'update facilities set asset_a_num = asset_a_num + $1, asset_b_num = asset_b_num + $2, updated = $3 where id = $4';
           var t = ( new Date() ).getTime();
-          asset.updated = t;
-          var query = { text: sql, values: [ asset.num_a, asset.num_b, asset.updated, asset.id ] };
+          var query = { text: sql, values: [ facility.asset_a_num, facility.asset_b_num, t, facility.id ] };
           conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
@@ -212,16 +209,15 @@ api.plusAsset = async function( asset ){
 };
 
 //. Minus
-api.minusAsset = async function( asset ){
+api.minusAsset = async function( facility ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update assets set num_a = num_a - $1, num_b = num_b - $2, updated = $3 where id = $4';
+          var sql = 'update facilities set asset_a_num = asset_a_num - $1, asset_b_num = asset_b_num - $2, updated = $3 where id = $4';
           var t = ( new Date() ).getTime();
-          asset.updated = t;
-          var query = { text: sql, values: [ asset.num_a, asset.num_b, asset.updated, asset.id ] };
+          var query = { text: sql, values: [ facility.asset_a_num, facility.asset_b_num, t, facility.id ] };
           conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
@@ -251,15 +247,15 @@ api.minusAsset = async function( asset ){
 };
 
 //. Consume (%)
-api.consumeAssetPercent = async function( asset_id, percent ){
+api.consumeAssetPercent = async function( facility_id, percent ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update assets set num_a = num_a * $1 / 100, num_b = num_b * $2 / 100, updated = $3 where id = $4';
+          var sql = 'update facilities set asset_a_num = asset_a_num * $1 / 100, asset_b_num = asset_b_num * $2 / 100, updated = $3 where id = $4';
           var t = ( new Date() ).getTime();
-          var query = { text: sql, values: [ percent, percent, t, asset_id ] };
+          var query = { text: sql, values: [ percent, percent, t, facility_id ] };
           conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
@@ -289,26 +285,26 @@ api.consumeAssetPercent = async function( asset_id, percent ){
 };
 
 //. Consume (amount)
-api.consumeAssetAmount = async function( asset_id, amount ){
+api.consumeAssetAmount = async function( facility_id, amount ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var r = await api.readAsset( asset_id );
+          var r = await api.readFacility( facility_id );
           if( r && r.status ){
-            var asset = r.asset;
-            var num_a = asset.num_a;
-            var num_b = asset.num_b;
-            if( typeof num_a == 'string' ){ num_a = parseInt( num_a ); }
-            if( typeof num_b == 'string' ){ num_b = parseInt( num_b ); }
-            var num = num_a + num_b;
-            var amount_a = amount * Math.round( num_a / num );
-            var amount_b = amount * Math.round( num_b / num );
+            var facility = r.facility;
+            var asset_a_num = facility.asset_a_num;
+            var asset_b_num = facility.asset_b_num;
+            if( typeof asset_a_num == 'string' ){ asset_a_num = parseInt( asset_a_num ); }
+            if( typeof asset_b_num == 'string' ){ asset_b_num = parseInt( asset_b_num ); }
+            var num = asset_a_num + asset_b_num;
+            var amount_a = amount * Math.round( asset_a_num / num );
+            var amount_b = amount * Math.round( asset_b_num / num );
 
-            var sql = 'update assets set num_a = num_a - $1, num_b = num_b - $2, updated = $3 where id = $4';
+            var sql = 'update facilities set asset_a_num = asset_a_num - $1, asset_b_num = asset_b_num - $2, updated = $3 where id = $4';
             var t = ( new Date() ).getTime();
-            var query = { text: sql, values: [ amount_a, amount_b, t, asset_id ] };
+            var query = { text: sql, values: [ amount_a, amount_b, t, facility_id ] };
             conn.query( query, async function( err, result ){
               if( err ){
                 console.log( err );
@@ -321,7 +317,7 @@ api.consumeAssetAmount = async function( asset_id, amount ){
               }
             });
           }else{
-            resolve( { status: false, error: 'not found for id = ' + asset_id } );
+            resolve( { status: false, error: 'not found for id = ' + facility_id } );
           }
         }catch( e ){
           console.log( e );
@@ -341,26 +337,26 @@ api.consumeAssetAmount = async function( asset_id, amount ){
 };
 
 //. Transport
-api.transportAsset = async function( asset_id_from, asset_id_to, amount ){
+api.transportAsset = async function( facility_id_from, facility_id_to, amount ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var r = await api.readAsset( asset_id_from );
+          var r = await api.readFacility( facility_id_from );
           if( r && r.status ){
-            var asset = r.asset;
-            var num_a = asset.num_a;
-            var num_b = asset.num_b;
-            if( typeof num_a == 'string' ){ num_a = parseInt( num_a ); }
-            if( typeof num_b == 'string' ){ num_b = parseInt( num_b ); }
-            var num = num_a + num_b;
-            var amount_a = Math.round( amount * num_a / num );
-            var amount_b = Math.round( amount * num_b / num );
+            var facility = r.facility;
+            var asset_a_num = facility.asset_a_num;
+            var asset_b_num = facility.asset_b_num;
+            if( typeof asset_a_num == 'string' ){ asset_a_num = parseInt( asset_a_num ); }
+            if( typeof asset_b_num == 'string' ){ asset_b_num = parseInt( asset_b_num ); }
+            var num = asset_a_num + asset_b_num;
+            var amount_a = Math.round( amount * asset_a_num / num );
+            var amount_b = Math.round( amount * asset_b_num / num );
 
-            var r1 = await api.minusAsset( { id: asset_id_from, num_a: amount_a, num_b: amount_b } );
+            var r1 = await api.minusAsset( { id: facility_id_from, asset_a_num: amount_a, asset_b_num: amount_b } );
             if( r1 && r1.status ){
-              var r2 = await api.plusAsset( { id: asset_id_to, num_a: amount_a, num_b: amount_b } );
+              var r2 = await api.plusAsset( { id: facility_id_to, asset_a_num: amount_a, asset_b_num: amount_b } );
               if( r2 && r2.status ){
                 //. #1
                 var snapshot = await api.createSnapshot( 'transportAsset' );
@@ -393,22 +389,22 @@ api.transportAsset = async function( asset_id_from, asset_id_to, amount ){
 };
 
 //. Reset
-api.resetAsset = async function( asset_id ){
+api.resetFacility = async function( facility_id ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update assets set num_a = 0, num_b = 0, updated = $1 where id = $2';
+          var sql = 'update facilities set asset_a_num = 0, asset_b_num = 0, updated = $1 where id = $2';
           var t = ( new Date() ).getTime();
-          var query = { text: sql, values: [ t, asset_id ] };
+          var query = { text: sql, values: [ t, facility_id ] };
           conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
               //. #1
-              var snapshot = await api.createSnapshot( 'resetAsset' );
+              var snapshot = await api.createSnapshot( 'resetFacility' );
 
               resolve( { status: true, result: result } );
             }
@@ -431,13 +427,13 @@ api.resetAsset = async function( asset_id ){
 };
 
 //. Resets
-api.resetAssets = async function(){
+api.resetFacilities = async function(){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update assets set num_a = 0, num_b = 0, updated = $1';
+          var sql = 'update facilities set asset_a_num = 0, asset_b_num = 0, updated = $1';
           var t = ( new Date() ).getTime();
           var query = { text: sql, values: [ t ] };
           conn.query( query, async function( err, result ){
@@ -446,7 +442,7 @@ api.resetAssets = async function(){
               resolve( { status: false, error: err } );
             }else{
               //. #1
-              var snapshot = await api.createSnapshot( 'resetAssets' );
+              var snapshot = await api.createSnapshot( 'resetFacilities' );
 
               resolve( { status: true, result: result } );
             }
@@ -469,21 +465,21 @@ api.resetAssets = async function(){
 };
 
 //. Remove
-api.removeAsset = async function( asset_id ){
+api.removeFacility = async function( facility_id ){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'delete from assets where id = $1';
-          var query = { text: sql, values: [ asset_id ] };
+          var sql = 'delete from facilities where id = $1';
+          var query = { text: sql, values: [ facility_id ] };
           conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
               //. #1
-              var snapshot = await api.createSnapshot( 'removeAsset' );
+              var snapshot = await api.createSnapshot( 'removeFacility' );
 
               resolve( { status: true, result: result } );
             }
@@ -506,13 +502,13 @@ api.removeAsset = async function( asset_id ){
 };
 
 //. Removes
-api.removeAssets = async function(){
+api.removeFacilities = async function(){
   return new Promise( async ( resolve, reject ) => {
     if( pg ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'delete from assets';
+          var sql = 'delete from facilities';
           var query = { text: sql, values: [] };
           conn.query( query, async function( err, result ){
             if( err ){
@@ -520,7 +516,7 @@ api.removeAssets = async function(){
               resolve( { status: false, error: err } );
             }else{
               //. #1
-              var snapshot = await api.createSnapshot( 'removeAssets' );
+              var snapshot = await api.createSnapshot( 'removeFacilities' );
 
               resolve( { status: true, result: result } );
             }
@@ -550,22 +546,22 @@ api.createSnapshot = async function( memo = '' ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var r = await api.readAssets();
+          var r = await api.readFacilities();
           if( r && r.status ){
-            if( r.assets.length == 0 ){
+            if( r.facilities.length == 0 ){
               resolve( { status: true, count: 0 } );
             }else{
               var key = uuidv4();
               var count = 0;
-              for( var i = 0; i < r.assets.length; i ++ ){
-                var sql = 'insert into snapshots( id, key, asset_id, num_a, num_b, memo, created, updated ) values ( $1, $2, $3, $4, $5, $6, $7, $8 )';
+              for( var i = 0; i < r.facilities.length; i ++ ){
+                var sql = 'insert into snapshots( id, key, facility_id, asset_a_num, asset_b_num, memo, created, updated ) values ( $1, $2, $3, $4, $5, $6, $7, $8 )';
                 var id = uuidv4();
                 var t = ( new Date() ).getTime();
-                var query = { text: sql, values: [ id, key, r.assets[i].id, r.assets[i].num_a, r.assets[i].num_b, memo, t, t ] };
+                var query = { text: sql, values: [ id, key, r.facilities[i].id, r.facilities[i].asset_a_num, r.facilities[i].asset_b_num, memo, t, t ] };
                 conn.query( query, function( err, result ){
                   if( err ){ console.log( err ); }
                   count ++;
-                  if( count == r.assets.length ){
+                  if( count == r.facilities.length ){
                     resolve( { status: true, count: count } );
                   }
                 });
@@ -598,20 +594,48 @@ api.readSnapshots = async function(){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'select * from snapshots order by created desc';
-          var query = { text: sql, values: [] };
-          conn.query( query, function( err, result ){
+          var sql1 = 'select distinct(key) from snapshots';
+          var query1 = { text: sql1, values: [] };
+          conn.query( query1, function( err, result1 ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
-              if( result && result.rows ){
-                resolve( { status: true, snapshots: result.rows } );
+              if( result1 && result1.rows ){
+                if( result1.rows.length > 0 ){
+                  var snapshots = [];
+                  var count = 0;
+                  for( var i = 0; i < result1.rows.length; i ++ ){
+                    var key = result1.rows[i].key;
+
+                    var sql2 = 'select * from snapshots where key = $1 order by created desc';
+                    var query2 = { text: sql2, values: [ key ] };
+                    conn.query( query2, function( err, result2 ){
+                      count ++;
+                      if( err ){
+                        console.log( err );
+                      }else{
+                        if( result2 && result2.rows ){
+                          snapshots.push( { key: key, snapshots: result2.rows } );
+                        }else{
+                          snapshots.push( { key: key, snapshots: [] } );
+                        }
+                      }
+
+                      if( count == result1.rows.length ){
+                        resolve( { status: true, snapshots: snapshots } );
+                      }
+                    });
+                  }
+                }else{
+                  resolve( { status: true, snapshots: [] } );
+                }
               }else{
                 resolve( { status: false, error: 'no data' } );
               }
             }
           });
+
         }catch( e ){
           console.log( e );
           resolve( { status: false, error: err } );
@@ -667,11 +691,11 @@ api.removeSnapshots = async function(){
 
 
 //. Create
-api.post( '/create_asset', async function( req, res ){
+api.post( '/create_facility', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset = req.body;
-  api.createAsset( asset ).then( function( result ){
+  var facility = req.body;
+  api.createFacility( facility ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -679,11 +703,11 @@ api.post( '/create_asset', async function( req, res ){
 });
 
 //. Read
-api.get( '/read_asset/:asset_id', async function( req, res ){
+api.get( '/read_facility/:facility_id', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset_id = req.params.asset_id;
-  api.readAsset( asset_id ).then( function( result ){
+  var facility_id = req.params.facility_id;
+  api.readFacility( facility_id ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -691,10 +715,10 @@ api.get( '/read_asset/:asset_id', async function( req, res ){
 });
 
 //. Reads
-api.get( '/read_assets', async function( req, res ){
+api.get( '/read_facilities', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  api.readAssets().then( function( result ){
+  api.readFacilities().then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -705,8 +729,8 @@ api.get( '/read_assets', async function( req, res ){
 api.post( '/plus_asset', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset = req.body;
-  api.plusAsset( asset ).then( function( result ){
+  var facility = req.body;
+  api.plusAsset( facility ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -717,8 +741,8 @@ api.post( '/plus_asset', async function( req, res ){
 api.post( '/minus_asset', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset = req.body;
-  api.minusAsset( asset ).then( function( result ){
+  var facility = req.body;
+  api.minusAsset( facility ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -726,10 +750,10 @@ api.post( '/minus_asset', async function( req, res ){
 });
 
 //. Consume(%)
-api.post( '/consume_asset_percent/:asset_id', async function( req, res ){
+api.post( '/consume_asset_percent/:facility_id', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset_id = req.params.asset_id;
+  var facility_id = req.params.facility_id;
   var percent = req.body.percent;
   api.consumeAssetPercent( asset_id, percent ).then( function( result ){
     res.status( result.status ? 200 : 400 );
@@ -739,12 +763,12 @@ api.post( '/consume_asset_percent/:asset_id', async function( req, res ){
 });
 
 //. Consume(amount)
-api.post( '/consume_asset_amount/:asset_id', async function( req, res ){
+api.post( '/consume_asset_amount/:facility_id', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset_id = req.params.asset_id;
+  var facility_id = req.params.facility_id;
   var amount = req.body.amount;
-  api.consumeAssetAmount( asset_id, amount ).then( function( result ){
+  api.consumeAssetAmount( facility_id, amount ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -752,13 +776,13 @@ api.post( '/consume_asset_amount/:asset_id', async function( req, res ){
 });
 
 //. Transport
-api.post( '/transport_asset/:asset_id_from/:asset_id_to', async function( req, res ){
+api.post( '/transport_asset/:facility_id_from/:facility_id_to', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset_id_from = req.params.asset_id_from;
-  var asset_id_to = req.params.asset_id_to;
+  var facility_id_from = req.params.facility_id_from;
+  var facility_id_to = req.params.facility_id_to;
   var amount = req.body.amount;
-  api.transportAsset( asset_id_from, asset_id_to, amount ).then( function( result ){
+  api.transportAsset( facility_id_from, facility_id_to, amount ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -766,11 +790,11 @@ api.post( '/transport_asset/:asset_id_from/:asset_id_to', async function( req, r
 });
 
 //. Reset
-api.post( '/reset_asset/:asset_id', async function( req, res ){
+api.post( '/reset_facility/:facility_id', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset_id = req.params.asset_id;
-  api.resetAsset( asset_id ).then( function( result ){
+  var facility_id = req.params.facility_id;
+  api.resetFacility( facility_id ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -778,10 +802,10 @@ api.post( '/reset_asset/:asset_id', async function( req, res ){
 });
 
 //. Resets
-api.post( '/reset_assets', async function( req, res ){
+api.post( '/reset_facilities', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  api.resetAssets().then( function( result ){
+  api.resetFacilities().then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -789,11 +813,11 @@ api.post( '/reset_assets', async function( req, res ){
 });
 
 //. Remove
-api.delete( '/remove_asset/:asset_id', async function( req, res ){
+api.delete( '/remove_facility/:facility_id', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  var asset_id = req.params.asset_id;
-  api.removeAsset( asset_id ).then( function( result ){
+  var facility_id = req.params.facility_id;
+  api.removeFacility( facility_id ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();
@@ -801,10 +825,10 @@ api.delete( '/remove_asset/:asset_id', async function( req, res ){
 });
 
 //. Removes
-api.delete( '/remove_assets', async function( req, res ){
+api.delete( '/remove_facilities', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
-  api.removeAssets().then( function( result ){
+  api.removeFacilities().then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();

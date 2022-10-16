@@ -6,42 +6,42 @@ info:
 #host: localhost:8080
 basePath: /api/db
 tags:
-  - name: assets
-    description: Assets APIs
+  - name: facilities
+    description: Facilities APIs
   - name: snapshots
     description: Snapshots APIs
 schemes:
   - http
   - https
 paths:
-  /create_asset:
+  /create_facility:
     post:
       tags:
-        - assets
-      summary: Asset 作成
-      description: Asset 作成
+        - facilities
+      summary: Facility 作成
+      description: Facility 作成
       produces:
         - application/json
       parameters:
         - name: body
           in: body
           schema:
-            $ref: '#/definitions/AssetRequest'
+            $ref: '#/definitions/FacilityRequest'
       responses:
         '200':
           description: 成功
         '400':
           description: エラー
-  /read_asset/{asset_id}:
+  /read_facility/{facility_id}:
     get:
       tags:
-        - assets
-      summary: Asset 取得
-      description: Asset 取得
+        - facilities
+      summary: Facility 取得
+      description: Facility 取得
       produces:
         - application/json
       parameters:
-        - name: asset_id
+        - name: facility_id
           type: string
           in: path
           description: Asset ID
@@ -51,12 +51,12 @@ paths:
           description: 成功
         '400':
           description: エラー
-  /read_assets:
+  /read_facilities:
     get:
       tags:
-        - assets
-      summary: Assets 全取得
-      description: Assets 全取得
+        - facilities
+      summary: Facilities 全取得
+      description: Facilities 全取得
       produces:
         - application/json
       responses:
@@ -67,7 +67,7 @@ paths:
   /plus_asset:
     post:
       tags:
-        - assets
+        - facilities
       summary: Asset 補給
       description: Asset 補給
       produces:
@@ -76,7 +76,7 @@ paths:
         - name: body
           in: body
           schema:
-            $ref: '#/definitions/AssetRequest'
+            $ref: '#/definitions/FacilityRequest'
       responses:
         '200':
           description: 成功
@@ -85,7 +85,7 @@ paths:
   /minus_asset:
     post:
       tags:
-        - assets
+        - facilities
       summary: Asset 減少
       description: Asset 減少
       produces:
@@ -94,25 +94,25 @@ paths:
         - name: body
           in: body
           schema:
-            $ref: '#/definitions/AssetRequest'
+            $ref: '#/definitions/FacilityRequest'
       responses:
         '200':
           description: 成功
         '400':
           description: エラー
-  /consume_asset_percent/{asset_id}:
+  /consume_asset_percent/{facility_id}:
     post:
       tags:
-        - assets
+        - facilities
       summary: Asset 利用
       description: Asset 利用
       produces:
         - application/json
       parameters:
-        - name: asset_id
+        - name: facility_id
           type: string
           in: path
-          description: Asset ID
+          description: Facility ID
           required: true
         - name: body
           in: body
@@ -123,19 +123,19 @@ paths:
           description: 成功
         '400':
           description: エラー
-  /consume_asset_amount/{asset_id}:
+  /consume_asset_amount/{facility_id}:
     post:
       tags:
-        - assets
+        - facilities
       summary: Asset 利用
       description: Asset 利用
       produces:
         - application/json
       parameters:
-        - name: asset_id
+        - name: facility_id
           type: string
           in: path
-          description: Asset ID
+          description: Facility ID
           required: true
         - name: body
           in: body
@@ -146,24 +146,24 @@ paths:
           description: 成功
         '400':
           description: エラー
-  /transport_asset/{asset_id_from}/{asset_id_to}:
+  /transport_asset/{facility_id_from}/{facility_id_to}:
     post:
       tags:
-        - assets
+        - facilities
       summary: Asset 移動
       description: Asset 移動
       produces:
         - application/json
       parameters:
-        - name: asset_id_from
+        - name: facility_id_from
           type: string
           in: path
-          description: 移動元 Asset ID
+          description: 移動元 Facility ID
           required: true
-        - name: asset_id_to
+        - name: facility_id_to
           type: string
           in: path
-          description: 移動先 Asset ID
+          description: 移動先 Facility ID
           required: true
         - name: body
           in: body
@@ -174,31 +174,31 @@ paths:
           description: 成功
         '400':
           description: エラー
-  /reset_asset/{asset_id}:
+  /reset_falicity/{falicity_id}:
     post:
       tags:
-        - assets
-      summary: Asset リセット
-      description: Asset リセット
+        - facilities
+      summary: Facility リセット
+      description: Facility リセット
       produces:
         - application/json
       parameters:
-        - name: asset_id
+        - name: facility_id
           type: string
           in: path
-          description: Asset ID
+          description: Facility ID
           required: true
       responses:
         '200':
           description: 成功
         '400':
           description: エラー
-  /reset_assets:
+  /reset_facilities:
     post:
       tags:
-        - assets
-      summary: Asset 全リセット
-      description: Asset 全リセット
+        - facilities
+      summary: Facility 全リセット
+      description: Facility 全リセット
       produces:
         - application/json
       responses:
@@ -206,31 +206,31 @@ paths:
           description: 成功
         '400':
           description: エラー
-  /remove_asset/{asset_id}:
+  /remove_facility/{facility_id}:
     delete:
       tags:
-        - assets
-      summary: Asset 削除
-      description: Asset 削除
+        - facilities
+      summary: Facility 削除
+      description: Facility 削除
       produces:
         - application/json
       parameters:
-        - name: asset_id
+        - name: facility_id
           type: string
           in: path
-          description: Asset ID
+          description: Facility ID
           required: true
       responses:
         '200':
           description: 成功
         '400':
           description: エラー
-  /remove_assets:
+  /remove_facilities:
     delete:
       tags:
-        - assets
-      summary: Asset 全削除
-      description: Asset 全削除
+        - facilities
+      summary: Facility 全削除
+      description: Facility 全削除
       produces:
         - application/json
       responses:
@@ -265,20 +265,20 @@ paths:
         '400':
           description: エラー
 definitions:
-  AssetRequest:
+  FacilityRequest:
     type: object
     properties:
       id:
         type: string
       name:
         type: string
-      name_a:
+      asset_a_name:
         type: string
-      num_a:
+      asset_a_num:
         type: number
-      name_b:
+      asset_b_name:
         type: string
-      num_b:
+      asset_b_num:
         type: number
   PercentRequest:
     type: object
