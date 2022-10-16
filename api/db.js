@@ -656,7 +656,8 @@ api.readSnapshots = async function(){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql1 = 'select distinct(key) from snapshots';
+          //var sql1 = 'select distinct(key) from snapshots';
+          var sql1 = 'select key, avg(created) as timestamp from snapshots group by key order by timestamp';
           var query1 = { text: sql1, values: [] };
           conn.query( query1, function( err, result1 ){
             if( err ){
@@ -670,7 +671,7 @@ api.readSnapshots = async function(){
                   for( var i = 0; i < result1.rows.length; i ++ ){
                     var key = result1.rows[i].key;
 
-                    var sql2 = 'select * from snapshots where key = $1 order by created desc';
+                    var sql2 = 'select * from snapshots where key = $1 order by created';
                     var query2 = { text: sql2, values: [ key ] };
                     conn.query( query2, function( err, result2 ){
                       count ++;
