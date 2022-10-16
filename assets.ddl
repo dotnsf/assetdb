@@ -2,7 +2,7 @@
 
 /* facilities */
 drop table facilities;
-create table if not exists facilities ( id varchar(50) not null primary key, name text default '', asset_a_name text default '', asset_a_num int default 0, asset_b_name text default '', asset_b_num int default 0, created bigint default 0, updated bigint default 0 );
+create table if not exists facilities ( id varchar(50) not null primary key, name text default '', asset_a_name text default '', asset_a_num int default 0, asset_b_name text default '', asset_b_num int default 0, asset_max int default -1, created bigint default 0, updated bigint default 0 );
 
 /* snapshots */
 drop table snapshots;

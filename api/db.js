@@ -60,12 +60,12 @@ api.createFacility = async function( facility ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'insert into facilities( id, name, asset_a_name, asset_b_name, created, updated ) values ( $1, $2, $3, $4, $5, $6 )';
+          var sql = 'insert into facilities( id, name, asset_a_name, asset_b_name, asset_max, created, updated ) values ( $1, $2, $3, $4, $5, $6, $7 )';
           if( !facility.id ){
             facility.id = uuidv4();
           }
           var t = ( new Date() ).getTime();
-          var query = { text: sql, values: [ facility.id, facility.name, facility.asset_a_name, facility.asset_a_name, t, t ] };
+          var query = { text: sql, values: [ facility.id, facility.name, facility.asset_a_name, facility.asset_a_name, facility.asset_max, t, t ] };
           conn.query( query, async function( err, result ){
             if( err ){
               console.log( err );
@@ -177,23 +177,34 @@ api.plusAsset = async function( facility ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update facilities set asset_a_num = asset_a_num + $1, asset_b_num = asset_b_num + $2, updated = $3 where id = $4';
-          var t = ( new Date() ).getTime();
-          var query = { text: sql, values: [ facility.asset_a_num, facility.asset_b_num, t, facility.id ] };
-          conn.query( query, async function( err, result ){
-            if( err ){
-              console.log( err );
-              resolve( { status: false, error: err } );
+          var r = await api.readFacility( facility.id );
+          if( r && r.status ){
+            var f = r.facility;
+            var new_amount = facility.asset_a_num + facility.asset_b_num + f.asset_a_num + f.asset_b_num;
+            if( f.asset_max == -1 || new_amount <= f.asset_max ){
+              var sql = 'update facilities set asset_a_num = asset_a_num + $1, asset_b_num = asset_b_num + $2, updated = $3 where id = $4';
+              var t = ( new Date() ).getTime();
+              var query = { text: sql, values: [ facility.asset_a_num, facility.asset_b_num, t, facility.id ] };
+              conn.query( query, async function( err, result ){
+                if( err ){
+                  console.log( err );
+                  resolve( { status: false, error: err } );
+                }else{
+                  //. #1
+                  var snapshot = await api.createSnapshot( 'plusAsset' );
+    
+                  resolve( { status: true, result: result } );
+                }
+              });
             }else{
-              //. #1
-              var snapshot = await api.createSnapshot( 'plusAsset' );
-
-              resolve( { status: true, result: result } );
+              resolve( { status: false, error: 'no enough space for asset' } );
             }
-          });
+          }else{
+            resolve( r );
+          }
         }catch( e ){
           console.log( e );
-          resolve( { status: false, error: err } );
+          resolve( { status: false, error: e } );
         }finally{
           if( conn ){
             conn.release();
@@ -215,20 +226,31 @@ api.minusAsset = async function( facility ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update facilities set asset_a_num = asset_a_num - $1, asset_b_num = asset_b_num - $2, updated = $3 where id = $4';
-          var t = ( new Date() ).getTime();
-          var query = { text: sql, values: [ facility.asset_a_num, facility.asset_b_num, t, facility.id ] };
-          conn.query( query, async function( err, result ){
-            if( err ){
-              console.log( err );
-              resolve( { status: false, error: err } );
-            }else{
-              //. #1
-              var snapshot = await api.createSnapshot( 'minusAsset' );
+          var r = await api.readFacility( facility.id );
+          if( r && r.status ){
+            var f = r.facility;
+            var new_amount = f.asset_a_num + f.asset_b_num - facility.asset_a_num - facility.asset_b_num;
+            if( new_amount >= 0 ){
+              var sql = 'update facilities set asset_a_num = asset_a_num - $1, asset_b_num = asset_b_num - $2, updated = $3 where id = $4';
+              var t = ( new Date() ).getTime();
+              var query = { text: sql, values: [ facility.asset_a_num, facility.asset_b_num, t, facility.id ] };
+              conn.query( query, async function( err, result ){
+                if( err ){
+                  console.log( err );
+                  resolve( { status: false, error: err } );
+                }else{
+                  //. #1
+                  var snapshot = await api.createSnapshot( 'minusAsset' );
 
-              resolve( { status: true, result: result } );
+                  resolve( { status: true, result: result } );
+                }
+              });
+            }else{
+              resolve( { status: false, error: 'no enough asset for this transaction' } );
             }
-          });
+          }else{
+            resolve( r );
+          }
         }catch( e ){
           console.log( e );
           resolve( { status: false, error: err } );
@@ -253,20 +275,28 @@ api.consumeAssetPercent = async function( facility_id, percent ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var sql = 'update facilities set asset_a_num = asset_a_num * $1 / 100, asset_b_num = asset_b_num * $2 / 100, updated = $3 where id = $4';
-          var t = ( new Date() ).getTime();
-          var query = { text: sql, values: [ percent, percent, t, facility_id ] };
-          conn.query( query, async function( err, result ){
-            if( err ){
-              console.log( err );
-              resolve( { status: false, error: err } );
-            }else{
-              //. #1
-              var snapshot = await api.createSnapshot( 'consumeAssetPercent' );
+          if( typeof percent == 'string' ){
+            parcent = parseFloat( percent );
+          }
 
-              resolve( { status: true, result: result } );
-            }
-          });
+          if( percent < 0.0 || percent > 100.0 ){
+            resolve( { status: false, error: 'percent have to be between 0.0 and 100.0.' } );
+          }else{
+            var sql = 'update facilities set asset_a_num = asset_a_num * $1 / 100, asset_b_num = asset_b_num * $2 / 100, updated = $3 where id = $4';
+            var t = ( new Date() ).getTime();
+            var query = { text: sql, values: [ percent, percent, t, facility_id ] };
+            conn.query( query, async function( err, result ){
+              if( err ){
+                console.log( err );
+                resolve( { status: false, error: err } );
+              }else{
+                //. #1
+                var snapshot = await api.createSnapshot( 'consumeAssetPercent' );
+
+                resolve( { status: true, result: result } );
+              }
+            });
+          }
         }catch( e ){
           console.log( e );
           resolve( { status: false, error: err } );
@@ -293,29 +323,39 @@ api.consumeAssetAmount = async function( facility_id, amount ){
         try{
           var r = await api.readFacility( facility_id );
           if( r && r.status ){
+            if( typeof amount == 'string' ){
+              amount = parseInt( amount );
+            }
+
             var facility = r.facility;
             var asset_a_num = facility.asset_a_num;
             var asset_b_num = facility.asset_b_num;
             if( typeof asset_a_num == 'string' ){ asset_a_num = parseInt( asset_a_num ); }
             if( typeof asset_b_num == 'string' ){ asset_b_num = parseInt( asset_b_num ); }
-            var num = asset_a_num + asset_b_num;
-            var amount_a = amount * Math.round( asset_a_num / num );
-            var amount_b = amount * Math.round( asset_b_num / num );
 
-            var sql = 'update facilities set asset_a_num = asset_a_num - $1, asset_b_num = asset_b_num - $2, updated = $3 where id = $4';
-            var t = ( new Date() ).getTime();
-            var query = { text: sql, values: [ amount_a, amount_b, t, facility_id ] };
-            conn.query( query, async function( err, result ){
-              if( err ){
-                console.log( err );
-                resolve( { status: false, error: err } );
-              }else{
-                //. #1
-                var snapshot = await api.createSnapshot( 'consumeAssetAmount' );
+            var new_amount = asset_a_num + asset_b_num - amount;
+            if( new_amount >= 0 ){
+              var num = asset_a_num + asset_b_num;
+              var amount_a = amount * Math.round( asset_a_num / num );
+              var amount_b = amount * Math.round( asset_b_num / num );
 
-                resolve( { status: true, asset: result } );
-              }
-            });
+              var sql = 'update facilities set asset_a_num = asset_a_num - $1, asset_b_num = asset_b_num - $2, updated = $3 where id = $4';
+              var t = ( new Date() ).getTime();
+              var query = { text: sql, values: [ amount_a, amount_b, t, facility_id ] };
+              conn.query( query, async function( err, result ){
+                if( err ){
+                  console.log( err );
+                  resolve( { status: false, error: err } );
+                }else{
+                  //. #1
+                  var snapshot = await api.createSnapshot( 'consumeAssetAmount' );
+
+                  resolve( { status: true, asset: result } );
+                }
+              });
+            }else{
+              resolve( { status: false, error: 'no enough asset for this transaction' } );
+            }
           }else{
             resolve( { status: false, error: 'not found for id = ' + facility_id } );
           }
@@ -343,33 +383,55 @@ api.transportAsset = async function( facility_id_from, facility_id_to, amount ){
       var conn = await pg.connect();
       if( conn ){
         try{
-          var r = await api.readFacility( facility_id_from );
-          if( r && r.status ){
-            var facility = r.facility;
-            var asset_a_num = facility.asset_a_num;
-            var asset_b_num = facility.asset_b_num;
-            if( typeof asset_a_num == 'string' ){ asset_a_num = parseInt( asset_a_num ); }
-            if( typeof asset_b_num == 'string' ){ asset_b_num = parseInt( asset_b_num ); }
-            var num = asset_a_num + asset_b_num;
-            var amount_a = Math.round( amount * asset_a_num / num );
-            var amount_b = Math.round( amount * asset_b_num / num );
+          if( typeof amount == 'string' ){
+            amount = parseInt( amount );
+          }
 
-            var r1 = await api.minusAsset( { id: facility_id_from, asset_a_num: amount_a, asset_b_num: amount_b } );
-            if( r1 && r1.status ){
-              var r2 = await api.plusAsset( { id: facility_id_to, asset_a_num: amount_a, asset_b_num: amount_b } );
-              if( r2 && r2.status ){
-                //. #1
-                var snapshot = await api.createSnapshot( 'transportAsset' );
+          var res1 = await api.readFacility( facility_id_from );
+          var res2 = await api.readFacility( facility_id_to );
+          if( res1 && res1.status && res2 && res2.status ){
+            var facility = res1.facility;
+            var from_asset_a_num = facility.asset_a_num;
+            var from_asset_b_num = facility.asset_b_num;
+            if( typeof from_asset_a_num == 'string' ){ from_asset_a_num = parseInt( from_asset_a_num ); }
+            if( typeof from_asset_b_num == 'string' ){ from_asset_b_num = parseInt( from_asset_b_num ); }
 
-                resolve( { status: true, asset_from: r1, asset_to: r2 } );
+            var new_amount_from = from_asset_a_num + from_asset_b_num - amount;
+            if( new_amount_from >= 0 ){
+              facility = res2.facility;
+              var to_asset_a_num = facility.asset_a_num;
+              var to_asset_b_num = facility.asset_b_num;
+              if( typeof to_asset_a_num == 'string' ){ to_asset_a_num = parseInt( to_asset_a_num ); }
+              if( typeof to_asset_b_num == 'string' ){ to_asset_b_num = parseInt( to_asset_b_num ); }
+
+              var new_amount_to = to_asset_a_num + to_asset_b_num + amount;
+              if( facility.asset_max == -1 || new_amount_to <= facility.asset_max ){
+                var num = from_asset_a_num + from_asset_b_num;
+                var amount_a = Math.round( amount * from_asset_a_num / num );
+                var amount_b = Math.round( amount * from_asset_b_num / num );
+
+                var r1 = await api.minusAsset( { id: facility_id_from, asset_a_num: amount_a, asset_b_num: amount_b } );
+                if( r1 && r1.status ){
+                  var r2 = await api.plusAsset( { id: facility_id_to, asset_a_num: amount_a, asset_b_num: amount_b } );
+                  if( r2 && r2.status ){
+                    //. #1
+                    var snapshot = await api.createSnapshot( 'transportAsset' );
+
+                    resolve( { status: true, asset_from: r1, asset_to: r2 } );
+                  }else{
+                    resolve( r2 );
+                  }
+                }else{
+                  resolve( r1 );
+                }
               }else{
-                resolve( r2 );
+                resolve( { status: false, error: 'no enough space for this transaction' } );
               }
             }else{
-              resolve( r1 );
+              resolve( { status: false, error: 'no enough asset for this transaction' } );
             }
           }else{
-            resolve( { status: false, error: 'not found for id = ' + asset_id_from } );
+            resolve( { status: false, error: 'not found for id = ' + facility_id_from + ', and/or ' + facility_id_to } );
           }
         }catch( e ){
           console.log( e );
