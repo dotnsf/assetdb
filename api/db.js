@@ -649,6 +649,44 @@ api.createSnapshot = async function( memo = '' ){
   });
 };
 
+//. Read
+api.readSnapshot = async function( key ){
+  return new Promise( async ( resolve, reject ) => {
+    if( pg ){
+      var conn = await pg.connect();
+      if( conn ){
+        try{
+          var sql = 'select * from snapshots where key = $1 order by created';
+          var query = { text: sql, values: [ key ] };
+          conn.query( query, function( err, result ){
+            if( err ){
+              console.log( err );
+              resolve( { status: false, error: err } );
+            }else{
+              if( result && result.rows ){
+                resolve( { status: true, snapshots: result.rows } );
+              }else{
+                resolve( { status: true, snapshots: [] } );
+              }
+            }
+          });
+        }catch( e ){
+          console.log( e );
+          resolve( { status: false, error: err } );
+        }finally{
+          if( conn ){
+            conn.release();
+          }
+        }
+      }else{
+        resolve( { status: false, error: 'no connection.' } );
+      }
+    }else{
+      resolve( { status: false, error: 'db not ready.' } );
+    }
+  });
+};
+
 //. Reads
 api.readSnapshots = async function(){
   return new Promise( async ( resolve, reject ) => {
@@ -659,7 +697,7 @@ api.readSnapshots = async function(){
           //var sql1 = 'select distinct(key) from snapshots';
           var sql1 = 'select key, avg(created) as timestamp from snapshots group by key order by timestamp';
           var query1 = { text: sql1, values: [] };
-          conn.query( query1, function( err, result1 ){
+          conn.query( query1, async function( err, result1 ){
             if( err ){
               console.log( err );
               resolve( { status: false, error: err } );
@@ -671,24 +709,18 @@ api.readSnapshots = async function(){
                   for( var i = 0; i < result1.rows.length; i ++ ){
                     var key = result1.rows[i].key;
 
-                    var sql2 = 'select * from snapshots where key = $1 order by created';
-                    var query2 = { text: sql2, values: [ key ] };
-                    conn.query( query2, function( err, result2 ){
-                      count ++;
-                      if( err ){
-                        console.log( err );
-                      }else{
-                        if( result2 && result2.rows ){
-                          snapshots.push( { key: key, snapshots: result2.rows } );
-                        }else{
-                          snapshots.push( { key: key, snapshots: [] } );
-                        }
-                      }
+                    var result2 = await api.readSnapshot( key );
+                    count ++;
 
-                      if( count == result1.rows.length ){
-                        resolve( { status: true, snapshots: snapshots } );
-                      }
-                    });
+                    if( result2 && result2.status ){
+                      snapshots.push( { key: key, snapshots: result2.snapshots } );
+                    }else{
+                      snapshots.push( { key: key, snapshots: [] } );
+                    }
+
+                    if( count == result1.rows.length ){
+                      resolve( { status: true, snapshots: snapshots } );
+                    }
                   }
                 }else{
                   resolve( { status: true, snapshots: [] } );
@@ -698,7 +730,6 @@ api.readSnapshots = async function(){
               }
             }
           });
-
         }catch( e ){
           console.log( e );
           resolve( { status: false, error: err } );
@@ -892,6 +923,18 @@ api.delete( '/remove_facilities', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
   api.removeFacilities().then( function( result ){
+    res.status( result.status ? 200 : 400 );
+    res.write( JSON.stringify( result, null, 2 ) );
+    res.end();
+  });
+});
+
+//. Read
+api.get( '/read_snapshot/:key', async function( req, res ){
+  res.contentType( 'application/json; charset=utf-8' );
+
+  var key = req.params.key;
+  api.readSnapshot( key ).then( function( result ){
     res.status( result.status ? 200 : 400 );
     res.write( JSON.stringify( result, null, 2 ) );
     res.end();

@@ -238,6 +238,25 @@ paths:
           description: 成功
         '400':
           description: エラー
+  /read_snapshot/{key}:
+    get:
+      tags:
+        - snapshots
+      summary: Snapshot 取得
+      description: Snapshot 取得
+      produces:
+        - application/json
+      parameters:
+        - name: key
+          type: string
+          in: path
+          description: Key
+          required: true
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
   /read_snapshots:
     get:
       tags:
