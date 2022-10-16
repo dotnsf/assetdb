@@ -74,7 +74,7 @@ api.createFacility = async function( facility ){
               //. #1
               var snapshot = await api.createSnapshot( 'createFacility' );
 
-              resolve( { status: true, result: result } );
+              resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
             }
           });
         }catch( e ){
@@ -193,7 +193,7 @@ api.plusAsset = async function( facility ){
                   //. #1
                   var snapshot = await api.createSnapshot( 'plusAsset' );
     
-                  resolve( { status: true, result: result } );
+                  resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
                 }
               });
             }else{
@@ -242,7 +242,7 @@ api.minusAsset = async function( facility ){
                   //. #1
                   var snapshot = await api.createSnapshot( 'minusAsset' );
 
-                  resolve( { status: true, result: result } );
+                  resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
                 }
               });
             }else{
@@ -293,7 +293,7 @@ api.consumeAssetPercent = async function( facility_id, percent ){
                 //. #1
                 var snapshot = await api.createSnapshot( 'consumeAssetPercent' );
 
-                resolve( { status: true, result: result } );
+                resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
               }
             });
           }
@@ -350,7 +350,7 @@ api.consumeAssetAmount = async function( facility_id, amount ){
                   //. #1
                   var snapshot = await api.createSnapshot( 'consumeAssetAmount' );
 
-                  resolve( { status: true, asset: result } );
+                  resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
                 }
               });
             }else{
@@ -417,7 +417,7 @@ api.transportAsset = async function( facility_id_from, facility_id_to, amount ){
                     //. #1
                     var snapshot = await api.createSnapshot( 'transportAsset' );
 
-                    resolve( { status: true, asset_from: r1, asset_to: r2 } );
+                    resolve( { status: true, result_from: { command: r1.result.command, rowCount: r1.result.rowCount }, result_to: { command: r2.result.command, rowCount: r2.result.rowCount } } );
                   }else{
                     resolve( r2 );
                   }
@@ -506,7 +506,7 @@ api.resetFacilities = async function(){
               //. #1
               var snapshot = await api.createSnapshot( 'resetFacilities' );
 
-              resolve( { status: true, result: result } );
+              resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
             }
           });
         }catch( e ){
@@ -543,7 +543,7 @@ api.removeFacility = async function( facility_id ){
               //. #1
               var snapshot = await api.createSnapshot( 'removeFacility' );
 
-              resolve( { status: true, result: result } );
+              resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
             }
           });
         }catch( e ){
@@ -580,7 +580,7 @@ api.removeFacilities = async function(){
               //. #1
               var snapshot = await api.createSnapshot( 'removeFacilities' );
 
-              resolve( { status: true, result: result } );
+              resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
             }
           });
         }catch( e ){
@@ -729,7 +729,7 @@ api.removeSnapshots = async function(){
               console.log( err );
               resolve( { status: false, error: err } );
             }else{
-              resolve( { status: true, result: result } );
+              resolve( { status: true, result: { command: result.command, rowCount: result.rowCount } } );
             }
           });
         }catch( e ){
